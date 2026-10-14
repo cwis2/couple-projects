@@ -53,7 +53,7 @@ export function SnakeApp({ user }: AppProps) {
     if (over) return;
     const t = setInterval(() => {
       setSnake((s) => {
-        const head: P = [(s[0][0] + dir.current[0] + N) % N, (s[0][1] + dir.current[1] + N) % N];
+        const head: P = [(s[0]![0] + dir.current[0] + N) % N, (s[0]![1] + dir.current[1] + N) % N];
         if (s.some(([x, y]) => x === head[0] && y === head[1])) { setOver(true); return s; }
         const ate = head[0] === food[0] && head[1] === food[1];
         if (ate) setFood([Math.floor(Math.random() * N), Math.floor(Math.random() * N)]);

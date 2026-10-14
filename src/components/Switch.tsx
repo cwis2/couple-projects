@@ -161,7 +161,7 @@ export function NintendoSwitch() {
           });
         } else if (e.key === "Enter") {
           e.preventDefault();
-          const id = tiles[selected]?.dataset.appId;
+          const id = tiles[selected]?.dataset["appId"];
           if (id) openApp(id);
         }
       } else if (phase === "select") {
@@ -170,7 +170,7 @@ export function NintendoSwitch() {
           setUserIdx((i) => (i + (next ? 1 : -1) + users.length) % users.length);
         } else if (e.key === "Enter") {
           e.preventDefault();
-          launchWithUser(users[userIdx]);
+          { const u = users[userIdx]; if (u) launchWithUser(u); }
         } else if (e.key === "Escape" || e.key === "Backspace") {
           e.preventDefault();
           setPhase("home");
@@ -195,7 +195,7 @@ export function NintendoSwitch() {
             <div className="display" ref={displayRef}>
               <div className={`home-screen${phase !== "home" ? " dimmed" : ""}`}>
                 <header className="home-topbar">
-                  <div className="user-icon">{user?.avatar ?? users[0].avatar}</div>
+                  <div className="user-icon">{user?.avatar ?? users[0]?.avatar}</div>
                   <div className="status">
                     <TopClock />
                     <span className="battery" aria-label="Battery 80%" />
