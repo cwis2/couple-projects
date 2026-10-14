@@ -239,6 +239,7 @@ html, body { margin: 0; background: var(--page-bg); overflow-x: hidden; }
   padding: 2cqw 1cqw;
   margin: 0; list-style: none;
 }
+.home-tiles > li { display: contents; }
 .home-tile {
   flex: 0 0 auto;
   width: var(--home-tile-width);

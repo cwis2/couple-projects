@@ -203,7 +203,7 @@ export function NintendoSwitch() {
                 </header>
                 <ul className="home-tiles" ref={tilesRef}>
                   {apps.map((app, i) => (
-                    <li key={app.id} style={{ display: "contents" }}>
+                    <li key={app.id}>
                       <button
                         className={`home-tile${i === selected ? " selected" : ""}`}
                         data-app-id={app.id}
