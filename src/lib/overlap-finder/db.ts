@@ -297,7 +297,10 @@ export async function saveEvent(
 ): Promise<CalendarEvent> {
   const targetUser = (eventData.user_id || currentUserId || "cwis").toLowerCase();
   const now = new Date().toISOString();
-  const id = eventData.id || `evt-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+  const existingIdIsUuid = Boolean(
+    eventData.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(eventData.id),
+  );
+  const id = existingIdIsUuid ? eventData.id! : globalThis.crypto.randomUUID();
   const fullEvent: CalendarEvent = {
     ...eventData,
     id,
@@ -327,20 +330,23 @@ export async function saveEvent(
             user_id: (savedList[0].user_id || targetUser).toLowerCase(),
           };
           const current = readLocalEvents(targetUser);
-          const local = current.filter((e) => e.id !== saved.id);
+          const local = current.filter((e) => e.id !== saved.id && e.id !== eventData.id);
           const updated = [...local, saved];
           writeLocalEvents(updated, targetUser);
           return saved;
         }
       }
+      const details = await res.text().catch(() => "");
+      throw new Error(`Supabase save failed (${res.status})${details ? `: ${details}` : ""}`);
     } catch (err) {
-      console.warn("Supabase save failed, saving locally:", err);
+      console.warn("Supabase save failed:", err);
+      throw err instanceof Error ? err : new Error("Supabase save failed.");
     }
   }
 
   // Local storage save specifically for this user
   const current = readLocalEvents(targetUser);
-  const existingIdx = current.findIndex((e) => e.id === id);
+  const existingIdx = current.findIndex((e) => e.id === id || e.id === eventData.id);
   let updatedList: CalendarEvent[];
 
   if (existingIdx >= 0) {

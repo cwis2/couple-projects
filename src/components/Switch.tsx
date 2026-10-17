@@ -101,7 +101,7 @@ export function NintendoSwitch() {
     for (const audio of [menuAudio, appAudio]) {
       if (audio) {
         audio.loop = true;
-        audio.volume = 0.2;
+        audio.volume = 0.05;
       }
     }
     menuMusicRef.current = menuAudio;

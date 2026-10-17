@@ -4,7 +4,7 @@ import type { CalendarEvent } from "../../lib/overlap-finder/types";
 interface EventModalProps {
   initialDate?: string;
   initialEvent?: CalendarEvent | null;
-  onSave: (eventData: Omit<CalendarEvent, "id" | "created_at"> & { id?: string }) => void;
+  onSave: (eventData: Omit<CalendarEvent, "id" | "created_at"> & { id?: string }) => void | Promise<void>;
   onDelete?: (id: string) => void;
   onClose: () => void;
   currentUserId?: string;
@@ -34,6 +34,7 @@ export function EventModal({
   const [endTime, setEndTime] = useState(initialEvent?.end_time || "11:00");
   const [note, setNote] = useState(initialEvent?.note || "");
   const [color, setColor] = useState(initialEvent?.color || PRESET_COLORS[0].value);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isDeleteConfirmOpen) return;
@@ -49,21 +50,26 @@ export function EventModal({
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [isDeleteConfirmOpen]);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !date) return;
 
-    onSave({
-      id: initialEvent?.id,
-      title: title.trim(),
-      date,
-      start_time: startTime,
-      end_time: endTime,
-      note: note.trim() || null,
-      color,
-      user_id: currentUserId,
-    });
-    onClose();
+    setSaveError(null);
+    try {
+      await onSave({
+        id: initialEvent?.id,
+        title: title.trim(),
+        date,
+        start_time: startTime,
+        end_time: endTime,
+        note: note.trim() || null,
+        color,
+        user_id: currentUserId,
+      });
+      onClose();
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "Could not save this event.");
+    }
   };
 
   return (
@@ -161,6 +167,7 @@ export function EventModal({
           </div>
 
           {/* Actions */}
+          {saveError && <p className="ds-save-error" role="alert">Save failed: {saveError}</p>}
           <div className="ds-modal-actions">
             <div>
               {initialEvent && onDelete && (

@@ -949,6 +949,13 @@
   cursor: pointer;
 }
 
+.ds-save-error {
+  margin: 0;
+  color: #b91c1c;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
 .ds-btn-cancel {
   background: #e2e8f0;
   color: #334155;
