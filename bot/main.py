@@ -25,7 +25,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 greeted_guild_ids = set()
 LONDON_TZ = ZoneInfo("Europe/London")
 NY_TZ = ZoneInfo("America/New_York")
-GMORNING_TIME = datetime.time(hour=23, minute=47, second=0, tzinfo=LONDON_TZ)
+GMORNING_TIME = datetime.time(hour=8, minute=0, second=0, tzinfo=LONDON_TZ)
 
 # Window limits in minutes from midnight (8:00 London time to 24:00 midnight)
 WINDOW_START_MINUTES = 8 * 60   # 480
