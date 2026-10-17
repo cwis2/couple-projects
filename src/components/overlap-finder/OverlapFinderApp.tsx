@@ -35,8 +35,17 @@ export function OverlapFinderApp({ user }: AppProps) {
       }
     });
 
-    // 3. Load events specifically for active user
-    getEvents(currentUserId).then(setEvents);
+    // 3. Load and periodically refresh events for the active user so changes
+    // made from another device appear without reopening the app.
+    let isMounted = true;
+    const refreshEvents = () => {
+      getEvents(currentUserId).then((latest) => {
+        if (isMounted) setEvents(latest);
+      });
+    };
+    refreshEvents();
+    const syncInterval = window.setInterval(refreshEvents, 15_000);
+    window.addEventListener("focus", refreshEvents);
 
     // 4. Subscribe to updates specifically for active user
     const unsubscribe = subscribeToEvents((updated) => {
@@ -45,6 +54,9 @@ export function OverlapFinderApp({ user }: AppProps) {
 
     return () => {
       clearTimeout(wipeTimer);
+      isMounted = false;
+      window.clearInterval(syncInterval);
+      window.removeEventListener("focus", refreshEvents);
       unsubscribe();
     };
   }, [currentDate, currentUserId]);
