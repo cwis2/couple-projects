@@ -39,11 +39,11 @@
   --home-tiles-display: flex;      /* flex (row/column) or grid */
   --home-tiles-direction: row;     /* row or column (flex mode) */
   --home-tiles-columns: 4;         /* number of tile columns (grid mode) */
-  --home-tiles-gap: 16px;          /* space between tiles */
+  --home-tiles-gap: 6px;          /* space between tiles */
   --home-tiles-align: center;      /* start, center, end */
   --home-tiles-scroll: auto;       /* overflow behavior of the tile row */
-  --home-tile-width: clamp(60px, 10vw, 220px);
-  --home-tile-height: clamp(60px, 10vw, 220px);
+  --home-tile-width: clamp(72px, 10vw, 130px);
+  --home-tile-height: clamp(72px, 10vw, 130px);
   --home-tile-selected-scale: 1.1; /* how much the selected tile grows */
   --home-dock-justify: center;     /* start, center, end, space-between */
   --home-dock-icon-size: clamp(22px, 3vw, 56px);
@@ -195,29 +195,42 @@ html, body { margin: 0; background: var(--page-bg); overflow-x: hidden; }
 
 /* ======================= Home screen layout ======================= */
 .home-screen {
+  background:
+    linear-gradient(to bottom, transparent 70%, rgb(0 0 0 / 35%)),
+    url("../images/Windows XP home.jpg") center / cover no-repeat;
   position: absolute; inset: 0;
-  display: var(--home-layout);
-  flex-direction: column;
-  grid-template-columns: 1fr;
-  grid-template-rows: auto 1fr auto;
+  display: block;
   padding: var(--home-padding);
   box-sizing: border-box;
-  gap: 2%;
   transition: opacity 300ms, filter 300ms;
+  overflow: hidden;
 }
 .home-screen.dimmed { opacity: .25; filter: blur(2px); }
 
 .home-topbar {
-  order: var(--home-topbar-order);
-  display: flex; align-items: center; justify-content: space-between;
   font-size: clamp(10px, 1.3cqw, 22px);
+  position: static;
 }
 .home-topbar .user-icon {
+  position: absolute;
+  top: 3%;
+  right: 3%;
+  z-index: 5;
+  overflow: hidden;
   width: 2.6cqw; height: 2.6cqw; border-radius: 50%;
   display: grid; place-items: center; font-size: 1.6cqw;
   background: var(--tile-bg); box-shadow: 0 0 0 2px var(--accent);
 }
-.home-topbar .status { display: flex; gap: 1.2cqw; align-items: center; }
+.home-topbar .user-icon img { width: 100%; height: 100%; object-fit: cover; }
+.home-topbar .status { display: flex;
+  gap: 1.2cqw;
+  align-items: center;
+  position: absolute;
+  left: 3%;
+  top: 3%;
+  z-index: 5;
+}
+.home-clock { color: #000; }
 .battery {
   width: 2.4cqw; height: 1.1cqw; border: 2px solid var(--screen-text);
   border-radius: 3px; position: relative; padding: 1px; box-sizing: border-box;
@@ -226,21 +239,30 @@ html, body { margin: 0; background: var(--page-bg); overflow-x: hidden; }
 .battery::after { content: ""; position: absolute; right: -5px; top: 25%; width: 3px; height: 50%; background: var(--screen-text); border-radius: 0 2px 2px 0; }
 
 .home-tiles {
-  order: var(--home-tiles-order);
-  flex: 1;
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  bottom: 12%;
+  height: calc(var(--home-tile-height) + 4cqw);
   display: var(--home-tiles-display);
   flex-direction: var(--home-tiles-direction);
   grid-template-columns: repeat(var(--home-tiles-columns), var(--home-tile-width));
   gap: var(--home-tiles-gap);
-  justify-content: var(--home-tiles-align);
+  justify-content: flex-start;
   align-items: center;
-  align-content: center;
-  overflow: var(--home-tiles-scroll);
-  padding: 2cqw 1cqw;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  /* End padding keeps the first/last tile and its selected scale inside the carousel. */
+  padding: 2cqw 3cqw;
+  box-sizing: border-box;
   margin: 0; list-style: none;
 }
+.home-tiles::-webkit-scrollbar { display: none; }
 .home-tiles > li { display: contents; }
 .home-tile {
+  position: relative;
+  overflow: hidden;
   flex: 0 0 auto;
   width: var(--home-tile-width);
   height: var(--home-tile-height);
@@ -258,17 +280,39 @@ html, body { margin: 0; background: var(--page-bg); overflow-x: hidden; }
   outline-offset: 4px;
   transition: transform 200ms cubic-bezier(.2,.8,.2,1), outline-color 200ms, box-shadow 200ms;
 }
-.home-tile .tile-icon { font-size: 3.5cqw; line-height: 1; }
+.tile-thumbnail {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.home-tile.has-thumbnail .tile-name {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 12% 4% 8%;
+  background: linear-gradient(transparent, rgb(0 0 0 / 75%));
+  box-sizing: border-box;
+  text-align: center;
+}
 .home-tile:hover { transform: scale(1.04); }
 .home-tile.selected {
   transform: scale(var(--home-tile-selected-scale));
   outline-color: var(--accent);
   box-shadow: 0 0 calc(var(--glow-strength) * 1.5) var(--accent);
   animation: tile-pulse 1.4s ease-in-out infinite;
+  z-index: 1;
 }
 @keyframes tile-pulse { 50% { outline-color: color-mix(in oklab, var(--accent) 40%, transparent); } }
 
 .home-dock {
+  position: absolute;
+  inset: auto 0 0;
+  height: 10%;
+  padding: 0 3%;
+  box-sizing: border-box;
+  background: #0878df;
+  border-top: 2px solid rgb(255 255 255 / 80%);
   order: var(--home-dock-order);
   display: flex; justify-content: var(--home-dock-justify); gap: 1.6cqw;
 }
@@ -299,8 +343,7 @@ html, body { margin: 0; background: var(--page-bg); overflow-x: hidden; }
 }
 .user-avatar {
   width: 7cqw; height: 7cqw; border-radius: 50%;
-  background: var(--avatar-color, var(--tile-bg));
-  display: grid; place-items: center; font-size: 3.6cqw;
+  object-fit: cover;
   outline: 3px solid transparent; outline-offset: 4px;
   transition: transform 200ms, outline-color 200ms;
 }
@@ -333,18 +376,23 @@ html, body { margin: 0; background: var(--page-bg); overflow-x: hidden; }
 .app-container.fixed-fallback.expanded { position: fixed; inset: 0; width: auto; height: auto; z-index: 9999; }
 .app-inner { width: 100%; height: 100%; }
 
-/* ---- Placeholder apps ---- */
-.app-center {
-  width: 100%; height: 100%; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 1rem; text-align: center;
+/* ---- Placeholder app content ---- */
+.app-placeholder {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  background: #000;
 }
-.app-big { font-size: clamp(2rem, 10vw, 9rem); font-weight: 200; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
-.app-sub { color: var(--screen-text-dim); font-size: clamp(.8rem, 1.4vw, 1.2rem); }
-.app-hint { position: absolute; bottom: 1rem; left: 0; right: 0; text-align: center; color: var(--screen-text-dim); font-size: .8rem; }
-.snake-board { display: grid; gap: 1px; background: var(--tile-bg); padding: 1px; height: min(70%, 70vw); aspect-ratio: 1; }
-.snake-cell { background: var(--screen-bg); }
-.snake-cell.body { background: var(--app-snake); }
-.snake-cell.food { background: var(--joycon-left); border-radius: 50%; }
+.app-placeholder img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.app-placeholder p { color: #111; font: 1rem sans-serif; }
 
 /* ==========================================================================
    LAYOUT PRESETS — uncomment ONE block to swap the home screen layout.
@@ -383,5 +431,4 @@ html, body { margin: 0; background: var(--page-bg); overflow-x: hidden; }
   --home-dock-order: -1;
 }
 .home-tile { flex-direction: row; }
-.home-tile .tile-icon { font-size: 2cqw; }
 */

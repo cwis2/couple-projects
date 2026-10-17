@@ -1,0 +1,1015 @@
+/* ==============================================================================
+   RETRO DUAL-SCREEN (DS-STYLE) THEME
+   All colors, layout dimensions, fonts, and transitions are defined as CSS variables
+   in this single theme file for easy customization and restyling.
+   ============================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=DotGothic16&family=Press+Start+2P&family=Space+Grotesk:wght@400;600;700&display=swap');
+
+:root {
+  /* ---------- Handheld Console Shell ---------- */
+  --ds-shell-bg: #2d303a;
+  --ds-shell-surface: linear-gradient(175deg, #383c48 0%, #252831 60%, #1e2027 100%);
+  --ds-shell-border: #16181f;
+  --ds-shell-outer-radius: 24px;
+  --ds-shell-padding: 16px;
+  --ds-shell-shadow: 0 20px 50px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+
+  /* ---------- Screen Bezels & Glass ---------- */
+  --ds-bezel-bg: #14161c;
+  --ds-bezel-border: #0e0f14;
+  --ds-bezel-radius: 12px;
+  --ds-bezel-padding: 8px;
+  --ds-bezel-inner-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.7);
+
+  /* ---------- Hinge Section ---------- */
+  --ds-hinge-gap: 12px;
+  --ds-hinge-bg: linear-gradient(180deg, #181a20 0%, #252831 50%, #15161c 100%);
+  --ds-hinge-accent: rgba(255, 255, 255, 0.08);
+
+  /* ---------- Screen Display & Graph-Paper Grid ---------- */
+  --ds-screen-bg: #e6eaf0;
+  --ds-screen-radius: 8px;
+  --ds-grid-line: rgba(56, 75, 102, 0.12);
+  --ds-grid-major: rgba(56, 75, 102, 0.22);
+  --ds-grid-size: 16px;
+  --ds-screen-text: #1d2633;
+  --ds-screen-text-dim: #5c687a;
+  --ds-screen-border: 1px solid rgba(0, 0, 0, 0.15);
+
+  /* ---------- Typography ---------- */
+  --ds-font-pixel: "DotGothic16", monospace;
+  --ds-font-heading: "Press Start 2P", monospace;
+  --ds-font-body: "Space Grotesk", system-ui, -apple-system, sans-serif;
+
+  /* ---------- Calendar Colors ---------- */
+  --ds-pink-header: #ff2e74;
+  --ds-pink-cell: rgba(255, 46, 116, 0.14);
+  --ds-pink-dot: #ff2e74;
+  --ds-blue-header: #2176ff;
+  --ds-blue-cell: rgba(33, 118, 255, 0.14);
+  --ds-blue-dot: #2176ff;
+  --ds-neutral-header: #475569;
+  --ds-today-border: #111827;
+  --ds-today-badge: #111827;
+  --ds-today-text: #ffffff;
+  --ds-event-dot: #ff4d6d;
+
+  /* ---------- Clock Colors ---------- */
+  --ds-clock-face-bg: #ffffff;
+  --ds-clock-bezel: #d1d8e0;
+  --ds-clock-numbers: #1a202c;
+  --ds-clock-hand-hour: #1a202c;
+  --ds-clock-hand-min: #2d3748;
+  --ds-clock-hand-sec: #e53e3e;
+  --ds-clock-pin: #1a202c;
+
+  /* ---------- DS Game Slot App Tiles ---------- */
+  --ds-tile-bg: linear-gradient(180deg, #ffffff 0%, #f1f4f9 100%);
+  --ds-tile-border: #c4cdd8;
+  --ds-tile-radius: 12px;
+  --ds-tile-shadow: 0 4px 10px rgba(18, 24, 38, 0.08), inset 0 1px 0 #ffffff;
+  --ds-tile-selected-border: #0ea5e9;
+  --ds-tile-selected-glow: 0 0 16px rgba(14, 165, 233, 0.55);
+  --ds-tile-active-bg: #e2e8f0;
+  --ds-tile-hover-scale: 1.01;
+  --ds-tile-press-scale: 0.985;
+
+  /* ---------- Event Color Tag Presets ---------- */
+  --ds-tag-pink: #f43f5e;
+  --ds-tag-blue: #0284c7;
+  --ds-tag-green: #10b981;
+  --ds-tag-purple: #8b5cf6;
+  --ds-tag-amber: #f59e0b;
+  --ds-tag-cyan: #06b6d4;
+
+  /* ---------- Overlap / Conflict Pill ---------- */
+  --ds-overlap-bg: #fef3c7;
+  --ds-overlap-border: #f59e0b;
+  --ds-overlap-text: #b45309;
+
+  /* ---------- Transitions & Animation ---------- */
+  --ds-wipe-duration: 280ms;
+  --ds-wipe-timing: cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+/* ==============================================================================
+   CONTAINER & DUAL SCREEN WRAPPER
+   ============================================================================== */
+
+.ds-app-viewport {
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: row;
+  gap: 14px;
+  justify-content: center;
+  align-items: stretch;
+  padding: 12px 8px;
+  box-sizing: border-box;
+  font-family: var(--ds-font-body);
+  color: var(--ds-screen-text);
+  user-select: none;
+}
+
+/* Centered DS shell with 4:3 ratio proportions */
+.ds-shell {
+  width: min(100%, 760px);
+  max-width: 760px;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  background: var(--ds-shell-surface);
+  border: 2px solid var(--ds-shell-border);
+  border-radius: var(--ds-shell-outer-radius);
+  padding: var(--ds-shell-padding);
+  box-shadow: var(--ds-shell-shadow);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-sizing: border-box;
+  margin: auto 0;
+  animation: ds-power-on 400ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.ds-control-legend {
+  align-self: center;
+  flex: 0 0 190px;
+  padding: 18px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  background: linear-gradient(160deg, #383c48 0%, #20232b 100%);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  color: #f8fafc;
+  box-sizing: border-box;
+}
+
+.ds-control-legend h2 {
+  margin: 0 0 14px;
+  color: #67e8f9;
+  font-family: var(--ds-font-heading);
+  font-size: 12px;
+}
+
+.ds-control-legend ul {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ds-control-legend li {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.ds-control-legend kbd {
+  color: #fff;
+  font-family: var(--ds-font-pixel);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.ds-control-legend li span { color: rgba(226, 232, 240, 0.7); }
+
+@keyframes ds-power-on {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Top and bottom bezels */
+.ds-bezel {
+  background: var(--ds-bezel-bg);
+  border: 1px solid var(--ds-bezel-border);
+  border-radius: var(--ds-bezel-radius);
+  padding: var(--ds-bezel-padding);
+  box-shadow: var(--ds-bezel-inner-shadow);
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+/* Hinge gap between the two screens */
+.ds-hinge {
+  height: var(--ds-hinge-gap);
+  flex: 0 0 var(--ds-hinge-gap);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  position: relative;
+  margin: 2px 0;
+}
+
+.ds-hinge-bar {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  height: 5px;
+  background: var(--ds-hinge-bg);
+  border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+}
+
+.ds-hinge-speaker {
+  display: flex;
+  gap: 3px;
+  z-index: 2;
+}
+
+.ds-hinge-hole {
+  width: 4px;
+  height: 4px;
+  background: #0d0e12;
+  border-radius: 50%;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Graph-Paper Grid Screen Background */
+.ds-screen {
+  background-color: var(--ds-screen-bg);
+  background-image:
+    repeating-linear-gradient(0deg, var(--ds-grid-line) 0px, var(--ds-grid-line) 1px, transparent 1px, transparent var(--ds-grid-size)),
+    repeating-linear-gradient(90deg, var(--ds-grid-line) 0px, var(--ds-grid-line) 1px, transparent 1px, transparent var(--ds-grid-size));
+  border-radius: var(--ds-screen-radius);
+  border: var(--ds-screen-border);
+  overflow: hidden;
+  position: relative;
+}
+
+.ds-screen-top {
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.ds-screen-bottom {
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* Screen Header Status Strip */
+.ds-status-strip {
+  height: 22px;
+  background: rgba(255, 255, 255, 0.65);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  font-family: var(--ds-font-pixel);
+  font-size: 11px;
+  color: var(--ds-screen-text-dim);
+  backdrop-filter: blur(4px);
+  z-index: 10;
+}
+
+/* ==============================================================================
+   TOP SCREEN: ANALOG CLOCK & MONTH CALENDAR
+   ============================================================================== */
+
+.ds-dashboard {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1.35fr;
+  padding: 10px;
+  gap: 10px;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+/* Clock Wrapper */
+.ds-clock-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 100%;
+}
+
+.ds-clock-squircle {
+  width: min(100%, 150px);
+  aspect-ratio: 1 / 1;
+  background: var(--ds-clock-face-bg);
+  border-radius: 22px;
+  border: 3px solid var(--ds-clock-bezel);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), inset 0 2px 4px rgba(0, 0, 0, 0.05);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ds-clock-digital {
+  font-family: var(--ds-font-pixel);
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  color: var(--ds-screen-text);
+  background: rgba(255, 255, 255, 0.85);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Calendar Card */
+.ds-calendar-card {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.ds-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.ds-calendar-title {
+  font-family: var(--ds-font-pixel);
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--ds-screen-text);
+  letter-spacing: 1px;
+}
+
+.ds-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  flex: 1;
+}
+
+.ds-cal-head {
+  text-align: center;
+  font-family: var(--ds-font-pixel);
+  font-size: 10px;
+  font-weight: bold;
+  padding: 1px 0;
+}
+
+.ds-cal-head.sun {
+  color: var(--ds-pink-header);
+}
+
+.ds-cal-head.sat {
+  color: var(--ds-blue-header);
+}
+
+.ds-cal-head.mid {
+  color: var(--ds-neutral-header);
+}
+
+.ds-cal-cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--ds-font-pixel);
+  font-size: 11px;
+  border-radius: 3px;
+  padding: 1px 0;
+  min-height: 22px;
+}
+
+.ds-cal-cell.sun {
+  background-color: var(--ds-pink-cell);
+  color: #b91c1c;
+}
+
+.ds-cal-cell.sat {
+  background-color: var(--ds-blue-cell);
+  color: #1d4ed8;
+}
+
+.ds-cal-cell.today {
+  border: 2px solid var(--ds-today-border);
+  font-weight: bold;
+  background-color: rgba(255, 255, 255, 0.95);
+}
+
+.ds-cal-cell.dim {
+  opacity: 0.25;
+}
+
+.ds-event-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: var(--ds-event-dot);
+  margin-top: 1px;
+}
+
+/* ==============================================================================
+   BOTTOM SCREEN: DS GAME SLOT TILES (HOME MENU)
+   ============================================================================== */
+
+.ds-home-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 12px 16px;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+.ds-game-tile {
+  background: var(--ds-tile-bg);
+  border: 2px solid var(--ds-tile-border);
+  border-radius: var(--ds-tile-radius);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  box-shadow: var(--ds-tile-shadow);
+  transition: transform 120ms ease, border-color 150ms ease, box-shadow 150ms ease;
+  position: relative;
+  overflow: hidden;
+  outline: none;
+}
+
+/* Notch on the cartridge tile to look like a real DS cartridge */
+.ds-game-tile::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 20px;
+  width: 40px;
+  height: 3px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 0 0 3px 3px;
+}
+
+.ds-game-tile:hover,
+.ds-game-tile.selected {
+  border-color: var(--ds-tile-selected-border);
+  box-shadow: var(--ds-tile-selected-glow), var(--ds-tile-shadow);
+  transform: translateY(-2px) scale(var(--ds-tile-hover-scale));
+}
+
+.ds-game-tile:active {
+  transform: translateY(1px) scale(var(--ds-tile-press-scale));
+  background: var(--ds-tile-active-bg);
+}
+
+.ds-tile-icon-box {
+  width: 46px;
+  height: 46px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.6);
+}
+
+.ds-tile-info {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  flex: 1;
+}
+
+.ds-tile-title {
+  font-family: var(--ds-font-pixel);
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--ds-screen-text);
+  letter-spacing: 0.5px;
+}
+
+.ds-tile-subtitle {
+  font-family: var(--ds-font-body);
+  font-size: 11px;
+  color: var(--ds-screen-text-dim);
+  margin-top: 1px;
+}
+
+/* Footer strip */
+.ds-footer-strip {
+  height: 26px;
+  background: rgba(255, 255, 255, 0.7);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  font-family: var(--ds-font-pixel);
+  font-size: 10px;
+  color: var(--ds-screen-text-dim);
+  box-sizing: border-box;
+}
+
+/* ==============================================================================
+   WEEK EDITOR (BOTTOM SCREEN VIEW)
+   ============================================================================== */
+
+.ds-editor-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  animation: ds-wipe-in var(--ds-wipe-duration) var(--ds-wipe-timing) both;
+}
+
+.ds-editor-view.closing {
+  animation: ds-wipe-out var(--ds-wipe-duration) var(--ds-wipe-timing) both;
+}
+
+@keyframes ds-wipe-in {
+  from {
+    clip-path: inset(0 0 100% 0);
+    opacity: 0.8;
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+}
+
+@keyframes ds-wipe-out {
+  from {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+  to {
+    clip-path: inset(100% 0 0 0);
+    opacity: 0.8;
+  }
+}
+
+.ds-editor-header {
+  height: 34px;
+  background: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.ds-btn-back {
+  font-family: var(--ds-font-pixel);
+  font-size: 11px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 3px 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ds-screen-text);
+  transition: all 120ms ease;
+}
+
+.ds-btn-back:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.ds-btn-back:active {
+  transform: translateY(1px);
+}
+
+.ds-editor-title {
+  font-family: var(--ds-font-pixel);
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--ds-screen-text);
+  text-align: center;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ds-btn-add {
+  font-family: var(--ds-font-pixel);
+  font-size: 11px;
+  background: #0284c7;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 3px 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  transition: background 120ms ease;
+}
+
+.ds-btn-add:hover {
+  background: #0369a1;
+}
+
+/* 7 Days Columns / Grid in Editor */
+.ds-editor-days-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+  padding: 6px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.ds-day-col {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.ds-day-col.sun {
+  border-top: 3px solid var(--ds-pink-header);
+}
+
+.ds-day-col.sat {
+  border-top: 3px solid var(--ds-blue-header);
+}
+
+.ds-day-col.today {
+  box-shadow: 0 0 0 2px var(--ds-today-border);
+}
+
+.ds-day-head {
+  padding: 3px;
+  text-align: center;
+  background: rgba(240, 243, 248, 0.7);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.ds-day-head-name {
+  font-family: var(--ds-font-pixel);
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.ds-day-head.sun .ds-day-head-name {
+  color: var(--ds-pink-header);
+}
+
+.ds-day-head.sat .ds-day-head-name {
+  color: var(--ds-blue-header);
+}
+
+.ds-day-head-date {
+  font-family: var(--ds-font-body);
+  font-size: 9px;
+  color: var(--ds-screen-text-dim);
+}
+
+.ds-day-events-list {
+  flex: 1;
+  padding: 3px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow-y: auto;
+  max-height: 140px;
+}
+
+.ds-event-card {
+  background: #ffffff;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  border-left-width: 3px;
+  padding: 3px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  cursor: pointer;
+  transition: transform 100ms ease, box-shadow 100ms ease;
+  position: relative;
+}
+
+.ds-event-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.ds-event-card-title {
+  font-family: var(--ds-font-pixel);
+  font-size: 10px;
+  font-weight: bold;
+  color: var(--ds-screen-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ds-event-card-time {
+  font-family: var(--ds-font-body);
+  font-size: 8px;
+  color: var(--ds-screen-text-dim);
+}
+
+.ds-day-add-btn {
+  margin: 2px;
+  background: transparent;
+  border: 1px dashed #cbd5e1;
+  border-radius: 4px;
+  font-family: var(--ds-font-pixel);
+  font-size: 9px;
+  color: #64748b;
+  padding: 2px;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.ds-day-add-btn:hover {
+  background: #f8fafc;
+  border-color: #0284c7;
+  color: #0284c7;
+}
+
+/* Overlap Banner / Pill */
+.ds-overlap-badge {
+  background: var(--ds-overlap-bg);
+  border: 1px solid var(--ds-overlap-border);
+  color: var(--ds-overlap-text);
+  font-family: var(--ds-font-pixel);
+  font-size: 8px;
+  padding: 1px 3px;
+  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 1px;
+}
+
+/* ==============================================================================
+   MODAL / POPUP FOR EVENT ADD & EDIT
+   ============================================================================== */
+
+.ds-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.ds-modal-card {
+  width: min(100%, 340px);
+  background: #ffffff;
+  border-radius: 10px;
+  border: 2px solid #0f172a;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: ds-modal-pop 160ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes ds-modal-pop {
+  from {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.ds-modal-title {
+  font-family: var(--ds-font-pixel);
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--ds-screen-text);
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ds-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ds-form-label {
+  font-family: var(--ds-font-pixel);
+  font-size: 10px;
+  color: var(--ds-screen-text-dim);
+}
+
+.ds-input {
+  font-family: var(--ds-font-body);
+  font-size: 11px;
+  padding: 5px 6px;
+  border-radius: 4px;
+  border: 1px solid #cbd5e1;
+  outline: none;
+  background: #f8fafc;
+  color: var(--ds-screen-text);
+}
+
+.ds-input:focus {
+  border-color: #0284c7;
+  background: #ffffff;
+}
+
+.ds-color-palette {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.ds-color-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 100ms ease;
+}
+
+.ds-color-swatch.selected {
+  border-color: #0f172a;
+  transform: scale(1.15);
+}
+
+.ds-modal-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.ds-btn-delete {
+  background: #ef4444;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-family: var(--ds-font-pixel);
+  font-size: 10px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.ds-delete-confirm-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 8px;
+  box-sizing: border-box;
+  background: rgba(15, 23, 42, 0.58);
+  backdrop-filter: blur(3px);
+}
+
+.ds-delete-confirm-card {
+  width: min(100%, 300px);
+  padding: 16px;
+  border: 2px solid #7f1d1d;
+  border-radius: 10px;
+  background: #fff;
+  color: #1d2633;
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
+  animation: ds-modal-pop 160ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.ds-delete-confirm-card h2 {
+  margin: 0 0 8px;
+  font-family: var(--ds-font-pixel);
+  font-size: 13px;
+}
+
+.ds-delete-confirm-card p {
+  margin: 0;
+  color: #475569;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.ds-delete-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.ds-btn-save {
+  background: #0284c7;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-family: var(--ds-font-pixel);
+  font-size: 10px;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+
+.ds-btn-cancel {
+  background: #e2e8f0;
+  color: #334155;
+  border: none;
+  border-radius: 4px;
+  font-family: var(--ds-font-pixel);
+  font-size: 10px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+/* ==============================================================================
+   RESPONSIVENESS (MOBILE STACKING)
+   ============================================================================== */
+
+@media (max-width: 640px) {
+  .ds-app-viewport {
+    flex-direction: column;
+    gap: 8px;
+    padding: 6px;
+  }
+
+  .ds-shell {
+    border-radius: 14px;
+    padding: 8px;
+    width: 100%;
+    flex: 1 1 auto;
+    height: auto;
+  }
+
+  .ds-control-legend {
+    align-self: stretch;
+    flex: 0 0 auto;
+    padding: 8px 10px;
+  }
+
+  .ds-control-legend h2 { margin: 0 0 6px; font-size: 10px; }
+  .ds-control-legend ul { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 10px; }
+  .ds-control-legend li { gap: 2px; font-size: 10px; }
+  .ds-control-legend kbd { font-size: 9px; }
+
+  .ds-dashboard {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 6px;
+  }
+
+  .ds-clock-card {
+    height: auto;
+  }
+
+  .ds-clock-squircle {
+    width: 110px;
+  }
+
+  .ds-editor-days-grid {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  .ds-day-col {
+    min-height: 70px;
+  }
+}

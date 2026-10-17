@@ -1,9 +1,17 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
-import { apps, type SwitchApp } from "../apps";
-import { users, type SwitchUser } from "../users";
+import { apps, getAppThumbnail, type SwitchApp } from "../apps";
+import { getUserThumbnail, users, type SwitchUser } from "../users";
+
+const musicFiles = import.meta.glob("../../music/*.mp3", {
+  eager: true,
+  query: "?url",
+  import: "default",
+}) as Record<string, string>;
+const menuTheme = musicFiles["../../music/menu.mp3"];
+const appTheme = musicFiles["../../music/app.mp3"];
 
 type Phase = "home" | "select" | "open" | "closing";
-const EXIT_KEYS = new Set(["Backspace", "Delete", "Home", "Enter", "Tab"]);
+const EXIT_KEYS = new Set(["Backspace", "Delete", "Home", "Escape"]);
 const ZOOM_MS = 450;
 
 /* ---------------- Joy-Cons (purely decorative, with press states) ---------------- */
@@ -47,12 +55,16 @@ function RightJoycon({ onHome }: { onHome: () => void }) {
 function TopClock() {
   const [t, setT] = useState("");
   useEffect(() => {
-    const f = () => setT(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
+    const f = () => setT(new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }));
     f();
     const i = setInterval(f, 10000);
     return () => clearInterval(i);
   }, []);
-  return <span>{t}</span>;
+  return <span className="home-clock">{t}</span>;
 }
 
 export function NintendoSwitch() {
@@ -68,8 +80,41 @@ export function NintendoSwitch() {
   const displayRef = useRef<HTMLDivElement>(null);
   const tilesRef = useRef<HTMLUListElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const menuMusicRef = useRef<HTMLAudioElement | null>(null);
+  const appMusicRef = useRef<HTMLAudioElement | null>(null);
   const phaseRef = useRef(phase);
   phaseRef.current = phase;
+
+  const switchMusic = useCallback((playAppTheme: boolean) => {
+    const active = playAppTheme ? appMusicRef.current : menuMusicRef.current;
+    const inactive = playAppTheme ? menuMusicRef.current : appMusicRef.current;
+    if (inactive && !inactive.paused) {
+      inactive.pause();
+      inactive.currentTime = 0;
+    }
+    if (active?.paused) void active.play().catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const menuAudio = menuTheme ? new Audio(menuTheme) : null;
+    const appAudio = appTheme ? new Audio(appTheme) : null;
+    for (const audio of [menuAudio, appAudio]) {
+      if (audio) {
+        audio.loop = true;
+        audio.volume = 0.35;
+      }
+    }
+    menuMusicRef.current = menuAudio;
+    appMusicRef.current = appAudio;
+    switchMusic(false);
+
+    return () => {
+      menuAudio?.pause();
+      appAudio?.pause();
+      menuMusicRef.current = null;
+      appMusicRef.current = null;
+    };
+  }, [switchMusic]);
 
   /** Measure tile position relative to the display, used as zoom origin. */
   const measureTile = useCallback((appId: string) => {
@@ -99,6 +144,7 @@ export function NintendoSwitch() {
   const launchWithUser = useCallback(
     (u: SwitchUser) => {
       if (!pendingApp) return;
+      switchMusic(true);
       setUser(u);
       setFromRect(measureTile(pendingApp.id));
       setExpanded(false);
@@ -112,12 +158,13 @@ export function NintendoSwitch() {
       // Next frame(s): trigger the zoom transition.
       requestAnimationFrame(() => requestAnimationFrame(() => setExpanded(true)));
     },
-    [pendingApp, measureTile],
+    [pendingApp, measureTile, switchMusic],
   );
 
   /** Zoom back to the tile, leave fullscreen, return home. */
   const closeApp = useCallback(() => {
     if (phaseRef.current !== "open") return;
+    switchMusic(false);
     setPhase("closing");
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     setExpanded(false);
@@ -126,7 +173,7 @@ export function NintendoSwitch() {
       setPendingApp(null);
       setFallback(false);
     }, ZOOM_MS);
-  }, []);
+  }, [switchMusic]);
 
   // If the user exits fullscreen with Esc, close the app too.
   useEffect(() => {
@@ -139,6 +186,9 @@ export function NintendoSwitch() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (phase === "open") {
+        if (pendingApp?.id === "scheduler" && (e.key === "Backspace" || e.key === "Escape")) {
+          return;
+        }
         if (EXIT_KEYS.has(e.key)) {
           e.preventDefault();
           e.stopPropagation();
@@ -179,13 +229,18 @@ export function NintendoSwitch() {
     };
     window.addEventListener("keydown", onKey, { capture: true });
     return () => window.removeEventListener("keydown", onKey, { capture: true });
-  }, [phase, selected, userIdx, openApp, launchWithUser, closeApp]);
+  }, [phase, selected, userIdx, pendingApp, openApp, launchWithUser, closeApp]);
 
   const AppComp = pendingApp?.component;
   const showApp = (phase === "open" || phase === "closing") && AppComp && user;
+  const isAppPhase = phase === "open" || phase === "closing";
+
+  const resumeMusic = useCallback(() => {
+    switchMusic(isAppPhase);
+  }, [isAppPhase, switchMusic]);
 
   return (
-    <div className="switch-page">
+    <div className="switch-page" onPointerDownCapture={resumeMusic} onKeyDownCapture={resumeMusic}>
       <div className="switch">
         <LeftJoycon />
         <div className="console-body">
@@ -195,7 +250,12 @@ export function NintendoSwitch() {
             <div className="display" ref={displayRef}>
               <div className={`home-screen${phase !== "home" ? " dimmed" : ""}`}>
                 <header className="home-topbar">
-                  <div className="user-icon">{user?.avatar ?? users[0]?.avatar}</div>
+                  <div className="user-icon">
+                    <img
+                      src={getUserThumbnail(user?.thumbnail ?? users[0]?.thumbnail)}
+                      alt={user?.name ?? users[0]?.name ?? "Selected user"}
+                    />
+                  </div>
                   <div className="status">
                     <TopClock />
                     <span className="battery" aria-label="Battery 80%" />
@@ -205,14 +265,16 @@ export function NintendoSwitch() {
                   {apps.map((app, i) => (
                     <li key={app.id}>
                       <button
-                        className={`home-tile${i === selected ? " selected" : ""}`}
+                        className={`home-tile${i === selected ? " selected" : ""}${app.thumbnail ? " has-thumbnail" : ""}`}
                         data-app-id={app.id}
                         style={{ "--tile-color": app.color } as CSSProperties}
                         onMouseEnter={() => phase === "home" && setSelected(i)}
                         onClick={() => { setSelected(i); openApp(app.id); }}
                         tabIndex={-1}
                       >
-                        <span className="tile-icon">{app.icon}</span>
+                        {app.thumbnail && (
+                          <img className="tile-thumbnail" src={getAppThumbnail(app.thumbnail)} alt="" />
+                        )}
                         <span className="tile-name">{app.name}</span>
                       </button>
                     </li>
@@ -237,7 +299,7 @@ export function NintendoSwitch() {
                         onClick={() => launchWithUser(u)}
                         tabIndex={-1}
                       >
-                        <span className="user-avatar" style={{ "--avatar-color": u.color } as CSSProperties}>{u.avatar}</span>
+                        <img className="user-avatar" src={getUserThumbnail(u.thumbnail)} alt="" />
                         {u.name}
                       </button>
                     ))}

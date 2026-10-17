@@ -2,13 +2,20 @@
 export interface SwitchUser {
   id: string;
   name: string;
-  avatar: string;
-  color: string;
+  thumbnail: string;
 }
 
 export const users: SwitchUser[] = [
-  { id: "mario", name: "Mario", avatar: "🍄", color: "var(--app-hello)" },
-  { id: "link", name: "Link", avatar: "🗡️", color: "var(--app-snake)" },
-  { id: "kirby", name: "Kirby", avatar: "⭐", color: "var(--joycon-left)" },
-  { id: "guest", name: "Guest", avatar: "👤", color: "var(--tile-bg)" },
+  { id: "cwis", name: "Cwis", thumbnail: "cwis.jpg" },
+  { id: "monokork", name: "Monokork", thumbnail: "monokork.jpg" },
 ];
+
+const userImages = import.meta.glob("../images/*", {
+  eager: true,
+  query: "?url",
+  import: "default",
+}) as Record<string, string>;
+
+export function getUserThumbnail(filename?: string) {
+  return filename ? userImages[`../images/${filename}`] : undefined;
+}
