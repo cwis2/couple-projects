@@ -15,6 +15,8 @@ load_dotenv()
 
 int_token = os.getenv("DISCORD_TOKEN")
 morning_user_id = os.getenv("IVY_USER_ID")
+ivy_user_id = os.getenv("IVY_USER_ID")
+cwis_user_id = os.getenv("CWIS_USER_ID")
 
 # Intents for the bot
 intents = discord.Intents.default()
@@ -23,7 +25,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 greeted_guild_ids = set()
 LONDON_TZ = ZoneInfo("Europe/London")
 NY_TZ = ZoneInfo("America/New_York")
-GMORNING_TIME = datetime.time(hour=8, minute=0, second=0, tzinfo=LONDON_TZ)
+GMORNING_TIME = datetime.time(hour=23, minute=47, second=0, tzinfo=LONDON_TZ)
 
 # Window limits in minutes from midnight (8:00 London time to 24:00 midnight)
 WINDOW_START_MINUTES = 8 * 60   # 480
@@ -87,10 +89,6 @@ def format_time_label(h: int, m: int) -> str:
 
 
 def format_free_times_message(free_intervals: list[tuple[int, int]], target_date: datetime.date) -> str:
-    """
-    Formats free intervals into the requested dual-timezone format:
-    'You are both free during: 10-14 bst/ 5-9 est, 15-17 bst/ 10-12 est, and 19-24 bst/ 14-19 est'
-    """
     if not free_intervals:
         return "You are both free during: None"
 
@@ -98,13 +96,12 @@ def format_free_times_message(free_intervals: list[tuple[int, int]], target_date
         target_date.year, target_date.month, target_date.day, 0, 0, tzinfo=LONDON_TZ
     )
 
-    parts: list[str] = []
+    london_parts: list[str] = []
+    ny_parts: list[str] = []
     for start_m, end_m in free_intervals:
-        # London time
         b_s_h, b_s_m = divmod(start_m, 60)
         b_e_h, b_e_m = divmod(end_m, 60)
 
-        # Eastern time conversion
         dt_s_london = base_london + datetime.timedelta(minutes=start_m)
         dt_e_london = base_london + datetime.timedelta(minutes=end_m)
         dt_s_ny = dt_s_london.astimezone(NY_TZ)
@@ -113,23 +110,27 @@ def format_free_times_message(free_intervals: list[tuple[int, int]], target_date
         e_s_h, e_s_m = dt_s_ny.hour, dt_s_ny.minute
         e_e_h, e_e_m = dt_e_ny.hour, dt_e_ny.minute
 
-        london_str = f"{format_time_label(b_s_h, b_s_m)}-{format_time_label(b_e_h, b_e_m)} bst"
-        ny_str = f"{format_time_label(e_s_h, e_s_m)}-{format_time_label(e_e_h, e_e_m)} est"
-        parts.append(f"{london_str}/{ny_str}")
+        london_parts.append(
+            f"{format_time_label(b_s_h, b_s_m)}-{format_time_label(b_e_h, b_e_m)}"
+        )
+        ny_parts.append(
+            f"{format_time_label(e_s_h, e_s_m)}-{format_time_label(e_e_h, e_e_m)}"
+        )
 
-    if len(parts) == 1:
-        joined_str = parts[0]
-    elif len(parts) == 2:
-        joined_str = f"{parts[0]} and {parts[1]}"
-    else:
-        joined_str = f"{', '.join(parts[:-1])}, and {parts[-1]}"
+    ivy_ping = f"<@{ivy_user_id}>" if ivy_user_id else "Ivy"
+    cwis_ping = f"<@{cwis_user_id}>" if cwis_user_id else "Cwis"
+    london_tz = base_london.replace(hour=12).tzname().lower()
+    ny_tz = base_london.replace(hour=12).astimezone(NY_TZ).tzname().lower()
+    return (
+        f"You are both free during:\n"
+        f"{ivy_ping} ({london_tz}): {', '.join(london_parts)}\n"
+        f"{cwis_ping} ({ny_tz}): {', '.join(ny_parts)}"
+    )
 
-    return f"You are both free during: {joined_str}"
 
-
-async def fetch_events_for_date(target_date: datetime.date) -> list[dict]:
-    """Fetches events for target_date from Supabase REST API or local cache/fallback."""
-    date_str = target_date.strftime("%Y-%m-%d")
+async def fetch_events_for_dates(target_dates: list[datetime.date]) -> list[dict]:
+    """Fetch events for the given local schedule dates from Supabase or fallback data."""
+    date_strings = {day.strftime("%Y-%m-%d") for day in target_dates}
 
     # 1. Supabase REST API
     supabase_url = os.getenv("SUPABASE_URL") or os.getenv("VITE_SUPABASE_URL")
@@ -150,7 +151,7 @@ async def fetch_events_for_date(target_date: datetime.date) -> list[dict]:
             }
             params = {
                 "select": "*",
-                "date": f"eq.{date_str}",
+                "date": f"in.({','.join(sorted(date_strings))})",
             }
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, headers=headers, params=params, timeout=10) as resp:
@@ -173,7 +174,7 @@ async def fetch_events_for_date(target_date: datetime.date) -> list[dict]:
                 with open(path, "r", encoding="utf-8") as f:
                     data = json.load(f)
                     if isinstance(data, list):
-                        return [e for e in data if e.get("date") == date_str]
+                        return [e for e in data if e.get("date") in date_strings]
             except Exception as e:
                 print(f"Error reading local events from {path}: {e}")
 
@@ -220,7 +221,7 @@ async def fetch_events_for_date(target_date: datetime.date) -> list[dict]:
             "user_id": "monokork",
         },
     ]
-    return [e for e in sample_events if e.get("date") == date_str]
+    return [e for e in sample_events if e.get("date") in date_strings]
 
 
 async def get_daily_free_time_message(target_date: datetime.date | None = None) -> str:
@@ -232,7 +233,17 @@ async def get_daily_free_time_message(target_date: datetime.date | None = None) 
     if target_date is None:
         target_date = datetime.datetime.now(LONDON_TZ).date()
 
-    events = await fetch_events_for_date(target_date)
+    # Cwis's schedule dates and times are New York local time. A New York event
+    # from the previous date can overlap this London date, so fetch both dates.
+    previous_date = target_date - datetime.timedelta(days=1)
+    events = await fetch_events_for_dates([previous_date, target_date])
+
+    london_midnight = datetime.datetime.combine(target_date, datetime.time.min, tzinfo=LONDON_TZ)
+    london_window_start = london_midnight + datetime.timedelta(minutes=WINDOW_START_MINUTES)
+    london_window_end = london_midnight + datetime.timedelta(days=1)
+    london_midnight_utc = london_midnight.astimezone(datetime.timezone.utc)
+    window_start_utc = london_window_start.astimezone(datetime.timezone.utc)
+    window_end_utc = london_window_end.astimezone(datetime.timezone.utc)
 
     busy_intervals: list[tuple[int, int]] = []
     for evt in events:
@@ -245,9 +256,18 @@ async def get_daily_free_time_message(target_date: datetime.date | None = None) 
         if s_m is None or e_m is None:
             continue
 
-        # Only pull/consider times after 08:00:00 London time for that day
-        b_s = max(WINDOW_START_MINUTES, s_m)
-        b_e = min(WINDOW_END_MINUTES, e_m)
+        event_date = datetime.date.fromisoformat(evt.get("date"))
+        event_tz = NY_TZ if raw_uid == "cwis" else LONDON_TZ
+        event_midnight = datetime.datetime.combine(event_date, datetime.time.min, tzinfo=event_tz)
+        event_start = (event_midnight + datetime.timedelta(minutes=s_m)).astimezone(datetime.timezone.utc)
+        event_end = (event_midnight + datetime.timedelta(minutes=e_m)).astimezone(datetime.timezone.utc)
+
+        # Clip all events to the London 08:00–midnight window, then express
+        # the clipped intervals as minutes from London midnight.
+        clipped_start = max(event_start, window_start_utc)
+        clipped_end = min(event_end, window_end_utc)
+        b_s = int((clipped_start - london_midnight_utc).total_seconds() // 60)
+        b_e = int((clipped_end - london_midnight_utc).total_seconds() // 60)
         if b_e > b_s:
             busy_intervals.append((b_s, b_e))
 
