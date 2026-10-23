@@ -22,7 +22,6 @@ cwis_user_id = os.getenv("CWIS_USER_ID")
 intents = discord.Intents.default()
 
 bot = commands.Bot(command_prefix="!", intents=intents)
-greeted_guild_ids = set()
 LONDON_TZ = ZoneInfo("Europe/London")
 NY_TZ = ZoneInfo("America/New_York")
 GMORNING_TIME = datetime.time(hour=8, minute=0, second=0, tzinfo=LONDON_TZ)
@@ -288,29 +287,11 @@ async def on_ready():
     if not scheduled_message.is_running():
         scheduled_message.start()
 
-    for guild in bot.guilds:
-        if guild.id in greeted_guild_ids:
-            continue
-
-        channel = guild.system_channel
-        if channel is None or not channel.permissions_for(guild.me).send_messages:
-            channel = next(
-                (
-                    text_channel
-                    for text_channel in guild.text_channels
-                    if text_channel.permissions_for(guild.me).send_messages
-                ),
-                None,
-            )
-
-        if channel is not None:
-            await channel.send("Hello!")
-            greeted_guild_ids.add(guild.id)
-
-
 @tasks.loop(time=GMORNING_TIME)
 async def scheduled_message():
     channel_id = int(os.getenv("DISCORD_CHANNEL_ID", "1560016164753637509"))
+    # Uncomment this line to send scheduled messages to the test channel instead.
+    # channel_id = 1561404700719321180
     channel = bot.get_channel(channel_id)
     if channel is None:
         try:
@@ -328,8 +309,11 @@ async def scheduled_message():
 
         # After sending the good morning message, send the mutual free time message
         try:
-            free_message = await get_daily_free_time_message()
+            london_today = datetime.datetime.now(LONDON_TZ).date()
+            free_message = await get_daily_free_time_message(london_today)
             await channel.send(free_message)
+            if london_today.weekday() == 5:
+                await channel.send("It's Saturday, please remember to update next week's schedule!")
         except Exception as e:
             print(f"Error computing or sending free time message: {e}")
 

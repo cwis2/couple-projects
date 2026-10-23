@@ -186,6 +186,13 @@ export function NintendoSwitch() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (phase === "open") {
+        const target = e.target;
+        const isTextInput = target instanceof HTMLInputElement
+          && !["button", "checkbox", "radio", "submit", "reset", "file", "image"].includes(target.type);
+        const isTextEditor = target instanceof HTMLTextAreaElement
+          || (target instanceof HTMLElement && target.isContentEditable);
+        if (e.key === "Backspace" && (isTextInput || isTextEditor)) return;
+
         if (pendingApp?.id === "scheduler" && (e.key === "Backspace" || e.key === "Escape")) {
           return;
         }
@@ -314,7 +321,7 @@ export function NintendoSwitch() {
                 className={`app-container${showApp ? " active" : ""}${expanded ? " expanded" : ""}${fallback ? " fixed-fallback" : ""}`}
                 style={fromRect}
               >
-                <div className="app-inner">{showApp && <AppComp user={user} />}</div>
+                <div className="app-inner">{showApp && <AppComp user={user} onExit={closeApp} />}</div>
               </div>
             </div>
           </div>
